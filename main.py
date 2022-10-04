@@ -1,5 +1,14 @@
 import os
 import shutil
+import hashlib
+import csv
+
+
+def user_register(name: str, password: str) -> None:
+    """Регистрация пользователей"""
+    with open('users.csv', 'a') as users:
+        pass
+    pass
 
 
 def __getcwd() -> str:
@@ -56,10 +65,14 @@ def cd(name: str, flag=None) -> None:
             else:
                 print('Папка maindir является корневой.')
         except (FileNotFoundError, ):
-            print("Папки с таким именем не существует.")
+            print(f"Папки с таким: {name} именем не существует.\n" + __getcwd())
     elif flag == '-c':  # create
-        os.mkdir(os.getcwd() + '\\' + name)
-        print(path + '>')
+        try:
+            os.mkdir(os.getcwd() + '\\' + name)
+            os.chdir(os.getcwd() + '\\' + name)
+            print(path + '>')
+        except (FileExistsError, ):
+            print("Папка уже существует, флаг -c не требуется.\n" + __getcwd())
 
 
 def mkfile(name='new_file') -> None:
@@ -104,14 +117,38 @@ def rm(file: str) -> None:
         print(f"Файла с таким именем нет в данной директории.\n" + __getcwd())
 
 
+def __pathmaker(file: str, path: str) -> tuple:
+    startpath = '.\\' + file
+    endpath = '.\\' + path
+    if '' in file:
+        startpath = file
+    if '' in path:
+        endpath = path
+    return (startpath, endpath)
+
+
 def copy(file: str, path: str) -> None:
     """Копирование файла из одной директории в другую"""
-    pass
+    startpath, endpath = __pathmaker(file, path)
+    try:
+        shutil.copy(startpath, endpath)
+        print(f"Файл успешно скопирован.\n" + __getcwd())
+    except (FileExistsError, ):
+        print(f"В директории назначения уже имеется файл с таким же именем.\n" + __getcwd())
+    except (BaseException, ):
+        print(f"Файл не удалось скопировать.\n" + __getcwd())
 
 
 def move(file: str, path: str) -> None:
     """Перемещение файла из одной директории в другую"""
-    pass
+    startpath, endpath = __pathmaker(file, path)
+    try:
+        shutil.move(startpath, endpath)
+        print(f"Файл успешно перемещён.\n" + __getcwd())
+    except (FileExistsError, ):
+        print(f"В директории назначения уже имеется файл с таким же именем.\n" + __getcwd())
+    except (BaseException, ):
+        print(f"Файл не удалось переместить.\n" + __getcwd())
 
 
 def rename(file: str, new_name: str) -> None:
@@ -126,6 +163,25 @@ def rename(file: str, new_name: str) -> None:
     else:
         os.rename(fulname, new_name)
 
+
+def arch() -> None:
+    """Архивирование текущей директории"""
+    current = os.getcwd()
+    if current.endswith('maindir'):
+        print('Папка maindir является корневой.')
+    elif current[current.rindex('\\') + 1:] + '.zip' not in os.listdir(os.getcwd()[:os.getcwd().rindex('\\')]):
+        os.chdir('..')
+        pre_current = os.getcwd()
+        shutil.make_archive(current[current.rindex('\\') + 1:], format='zip', root_dir=current, base_dir=pre_current)
+        print("Успешная архивация.")
+        cd(current[current.rindex('\\') + 1:])
+    else:
+        print("Архив уже создан.\n" + __getcwd())
+
+
+def darch() -> None:
+    """Разархивирование архива по имени в текущую директорию"""
+    pass
 
 
 if __name__ == '__main__':
