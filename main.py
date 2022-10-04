@@ -52,25 +52,20 @@ def rmdir(name: str, flag=None) -> None:
 
 def cd(name: str, flag=None) -> None:
     """Перемещение между папками"""
-    path = os.getcwd() + '\\' + name
-    path = path[path.index('maindir'):]
     if flag is None:
         try:
-            if name != '..':
-                os.chdir(name)
-                print(path + '>')
-            elif name == '..' and not os.getcwd().endswith('maindir'):
+            if name == '..' and os.getcwd().endswith('maindir'):
+                print('Папка maindir является корневой.\n' + __getcwd())
+            else:
                 os.chdir(name)
                 print(__getcwd())
-            else:
-                print('Папка maindir является корневой.')
         except (FileNotFoundError, ):
-            print(f"Папки с таким: {name} именем не существует.\n" + __getcwd())
+            print(f"Папки с таким: {name} именем нет в данной директории.\n" + __getcwd())
     elif flag == '-c':  # create
         try:
             os.mkdir(os.getcwd() + '\\' + name)
             os.chdir(os.getcwd() + '\\' + name)
-            print(path + '>')
+            print(__getcwd())
         except (FileExistsError, ):
             print("Папка уже существует, флаг -c не требуется.\n" + __getcwd())
 
@@ -162,26 +157,6 @@ def rename(file: str, new_name: str) -> None:
         print(f"Другому файлу в данной директории присвоено такое имя.\n" + __getcwd())
     else:
         os.rename(fulname, new_name)
-
-
-def arch() -> None:
-    """Архивирование текущей директории"""
-    current = os.getcwd()
-    if current.endswith('maindir'):
-        print('Папка maindir является корневой.')
-    elif current[current.rindex('\\') + 1:] + '.zip' not in os.listdir(os.getcwd()[:os.getcwd().rindex('\\')]):
-        os.chdir('..')
-        pre_current = os.getcwd()
-        shutil.make_archive(current[current.rindex('\\') + 1:], format='zip', root_dir=current, base_dir=pre_current)
-        print("Успешная архивация.")
-        cd(current[current.rindex('\\') + 1:])
-    else:
-        print("Архив уже создан.\n" + __getcwd())
-
-
-def darch() -> None:
-    """Разархивирование архива по имени в текущую директорию"""
-    pass
 
 
 if __name__ == '__main__':
