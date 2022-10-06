@@ -1,5 +1,28 @@
 import os
 import shutil
+import hashlib
+import csv
+
+
+def help() -> None:
+    print("Доступные команды (для взаимодействия с файлами нужно находится в той же директории, что и они):\n",
+          "·ls - вывод содержимого текущей папки\n",
+          "·mkdir [<name>] - создание папки с именем name, по умолчанию - new_folder\n",
+          "·rmdir <name> [<flag>] - удаление папки с именем name; флаг -a удаляет папку, если в ней есть содержимое\n",
+          "·cd <name> [<flag>] - перещение в директорию name; если name = .., то перемещение на директорию выше;\n",
+          " флаг -c позволяет создать папку с именем name и переместится в неё\n",
+          "·mkfile [<name>] - создание текстового файла с именем name, по умолчанию - new_file\n",
+          "·tell <text> <name> - запись строки text в файл с именем name\n",
+          "·show <name> - вывод содержимого текстового файла с именем name\n",
+          "·rm <name> - удаление текстового файла с именем name\n",
+          "·copy <name> <path> - копирование файла с именем name в директорию по пути path\n",
+          "·move <name> <path> - перемещение файла с именем name в директорию по пути path\n",
+          "·rename <name> <new name> - переименование текстового файла с именем name на имя new name.\n"
+          + __getcwd(), end='')
+
+
+def unknown() -> None:
+    print("Неизвестная команда, пропишите --help для помощи.\n" + __getcwd(), end='')
 
 
 def __getcwd() -> str:
@@ -26,25 +49,23 @@ def mkdir(name='new_folder') -> None:
         os.mkdir(path=name)
         print(f"Папка {name} создана.\n{path}>", end='')
     except (FileExistsError, ):
-        print(f"Папка с таким именем уже существует.\n{path}> ", end='')
+        print(f"Папка с таким именем уже существует.\n{path}>", end='')
 
 
 def rmdir(name: str, flag=None) -> None:
     """Удаление папки"""
-    #path = os.getcwd() + '\\'
-    #path = path[path.index('maindir'):-1]
     path = __getcwd()
     if flag is None:
         try:
             os.rmdir(name)
-            print(f"Папка {name} удалена.\n{path} ", end='')
-        except (OSError, ):
-            print(f"Папка имеет содержимое, её нельзя удалить.\n{path} ", end='')
+            print(f"Папка {name} удалена.\n{path}", end='')
         except (FileNotFoundError, ):
-            print(f"Неизвестная папка.\n{path} ", end='')
+            print(f"Неизвестная папка.\n{path}", end='')
+        except (OSError, ):
+            print(f"Папка имеет содержимое, её нельзя удалить.\n{path}", end='')
     elif flag == '-a':  # all
         shutil.rmtree(name)
-        print(f"Папка {name} удалена со всем её содержимым.\n{path} ", end='')
+        print(f"Папка {name} удалена со всем её содержимым.\n{path}", end='')
     else:
         print(f"Неизвестный флаг.\n{path} ", end='')
 
@@ -64,7 +85,7 @@ def cd(name: str, flag=None) -> None:
         try:
             os.mkdir(os.getcwd() + '\\' + name)
             os.chdir(os.getcwd() + '\\' + name)
-            print(__getcwd())
+            print(__getcwd(), end='')
         except (FileExistsError, ):
             print("Папка уже существует, флаг -c не требуется.\n" + __getcwd(), end='')
 
@@ -151,9 +172,59 @@ def rename(file: str, new_name: str) -> None:
     if new_name in os.listdir(os.getcwd()):
         print(f"Другому файлу в данной директории присвоено такое имя.\n" + __getcwd(), end='')
     else:
-        os.rename(fulname, new_name)
-        print("Успешное переименование файла.\n" + __getcwd(), end='')
+        try:
+            os.rename(fulname, new_name)
+            print("Успешное переименование файла.\n" + __getcwd(), end='')
+        except (FileNotFoundError, ):
+            print("Файл для переименования не найден\n" + __getcwd(), end='')
 
 
-if __name__ == '__main__':
-    os.chdir('maindir')  # файл начинает всегда работать в D:\pythonProject_file_manager\maindir
+comms = {'rmdir': rmdir, 'cd': cd, 'mkdir': mkdir, 'mkfile': mkfile, '--help': help, 'ls': ls, 'show': show,
+         'rm': rm, 'copy': copy, 'move': move, 'rename': rename}
+
+
+def __namechecker(name: str) -> bool:
+    for symbol in '/\":;|=[]\\?\'<>*':
+        if symbol in name:
+            return False
+    return True
+
+
+def user_inter() -> (str, bool):
+    flag, attempts = False, 3
+    name = input("Hello! Enter your name: ")
+    while True:
+        f = __namechecker(name)
+        if f:
+            break
+        else:
+            name = input("Impossible name! Try another:")
+    if name == '--exit':
+        return name
+    with open('users.csv', 'r') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            if row['name'] == name:
+                user_password, user_name, user_dir, flag = row['password'], row['name'], row['directory'], not flag
+                break
+    if flag:  # известный пользователь
+        print(f"Hello, {user_name}! Validate your password, please.")
+        while True:
+            password = input("Password: ")
+            if hashlib.md5(password.encode()).hexdigest() == user_password:
+                return user_dir
+            else:
+                print("Wrong password! Try again. ", end='')
+                attempts -= 1
+            if attempts == 0:
+                return False
+    else:  # неизвестный пользователь
+        user_name = name
+        print(f"Hello, {user_name}! Register, please!")
+        user_password = hashlib.md5(input("Input your password: ").encode()).hexdigest()
+        user_dir = 'maindir_' + user_name
+        os.mkdir(user_dir)
+        with open('users.csv', 'a') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=['name', 'password', 'directory'])
+            writer.writerow({'name': user_name, 'password': user_password, 'directory': user_dir})
+        return user_dir
