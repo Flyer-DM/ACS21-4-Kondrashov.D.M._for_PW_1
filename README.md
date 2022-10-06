@@ -1,4 +1,3 @@
-# ACS21-4-Kondrashov.D.M._for_PW_1
 Лабораторная работа "Файловый менеджер" по ПпП
 
 
@@ -86,3 +85,8 @@
 
 Для выхода из консоли нужно прописать exit.
 
+Добавлена регистрация пользователей с созданием их собственных директорий:
+
+![image](https://user-images.githubusercontent.com/113033685/194393452-27ec63d0-4cd2-4df1-a3e2-5f0129d066b0.png)
+
+![image](https://user-images.githubusercontent.com/113033685/194393468-81d12312-cabe-448d-8d52-3fd402b26318.png)
